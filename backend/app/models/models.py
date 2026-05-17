@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from app.database.db import Base
+from app.models.import_session import ImportSession
 
 class Filial(Base):
     __tablename__ = "filials"
