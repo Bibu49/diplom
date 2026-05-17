@@ -1,0 +1,59 @@
+.app-header {
+  background-color: #ffffff;
+  color: #2c3e50;
+  padding: 12px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  border-bottom: 3px solid #f97316; /* оранжевая полоса снизу */
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.logo:hover {
+  opacity: 0.8;
+}
+
+.logo-img {
+  height: 50px;
+  width: auto;
+  border-radius: 8px;
+}
+
+.company-name {
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: #f97316; /* оранжевый */
+}
+
+.header-title {
+  font-size: 1rem;
+  font-weight: 500;
+  background-color: #fff3e6;
+  padding: 6px 14px;
+  border-radius: 30px;
+  color: #f97316;
+}
+
+@media (max-width: 700px) {
+  .app-header {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+    padding: 12px;
+  }
+  .company-name {
+    font-size: 1.1rem;
+  }
+  .logo-img {
+    height: 40px;
+  }
+}

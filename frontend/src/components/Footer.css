@@ -1,0 +1,40 @@
+.app-footer {
+  background-color: #2d3748; /* темно-серый */
+  color: #cbd5e0;
+  padding: 24px 32px 20px;
+  margin-top: 50px;
+  border-top: 1px solid #4a5568;
+}
+
+.footer-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.footer-info p {
+  margin: 8px 0;
+}
+
+.footer-info a {
+  color: #facc15;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.footer-info a:hover {
+  text-decoration: underline;
+  color: #fbbf24;
+}
+
+.footer-credits {
+  margin-top: 16px;
+  font-size: 0.85rem;
+  color: #a0aec0;
+}
+
+@media (max-width: 600px) {
+  .app-footer {
+    padding: 20px 16px;
+  }
+}

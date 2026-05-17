@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: kpi_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1904
+      POSTGRES_DB: kpi_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - kpi_network
+
+  backend:
+    build: ./backend
+    container_name: kpi_backend
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:1904@postgres:5432/kpi_db
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    networks:
+      - kpi_network
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    container_name: kpi_nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - kpi_network
+
+volumes:
+  postgres_data:
+
+networks:
+  kpi_network:
+    driver: bridge

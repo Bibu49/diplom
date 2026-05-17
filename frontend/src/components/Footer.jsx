@@ -1,0 +1,20 @@
+import React from 'react';
+import './Footer.css';
+
+const Footer = ({ companyName, year, contactEmail, companyPhone }) => {
+  return (
+    <footer className="app-footer">
+      <div className="footer-content">
+        <div className="footer-info">
+          <p>© {year} {companyName} — Все права защищены</p>
+          <p>📧 <a href={`mailto:${contactEmail}`}>{contactEmail}</a> | 📞 {companyPhone}</p>
+        </div>
+        <div className="footer-credits">
+          Разработано в рамках дипломного проекта «Информационный сервис для расчёта и визуализации KPI филиалов»
+        </div>
+      </div>
+    </footer>
+  );
+};
+
+export default Footer;

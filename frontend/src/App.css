@@ -1,0 +1,143 @@
+/* Сброс отступов у body и html */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #f7fafc;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.app-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Убираем ограничение по ширине, контент растягивается, но с внутренними отступами */
+.container {
+  flex: 1;
+  width: 100%;
+  padding: 20px 32px;
+  background-color: #ffffff;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Элементы управления и таблица остаются в рамках, но фон растянут */
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.controls label {
+  font-weight: bold;
+  align-self: center;
+  color: #2d3748;
+}
+
+input[type="month"] {
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 16px;
+  background-color: white;
+}
+
+button {
+  padding: 8px 20px;
+  background-color: #f97316; /* оранжевый */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.3s, transform 0.1s;
+}
+
+button:hover {
+  background-color: #ea580c;
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 40px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  border: 1px solid #edf2f7;
+}
+
+.rating-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rating-table th,
+.rating-table td {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 14px 12px;
+  text-align: center;
+}
+
+.rating-table th {
+  background-color: #fff7ed;
+  font-weight: 600;
+  color: #f97316;
+  border-bottom: 2px solid #ffedd5;
+}
+
+.rating-table tr:hover {
+  background-color: #fffaf5;
+}
+
+.loader {
+  text-align: center;
+  font-size: 18px;
+  margin-top: 50px;
+  color: #f97316;
+}
+
+.error {
+  text-align: center;
+  color: #dc2626;
+  font-weight: bold;
+  margin-top: 30px;
+}
+
+.chart-container {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  border: 1px solid #edf2f7;
+  margin-top: 20px;
+}
+
+h1 {
+  text-align: center;
+  color: #f97316;
+  margin-bottom: 30px;
+  font-weight: 600;
+}
+
+/* Адаптивность */
+@media (max-width: 640px) {
+  .container {
+    padding: 16px;
+  }
+  .rating-table th,
+  .rating-table td {
+    padding: 8px 6px;
+    font-size: 14px;
+  }
+}
