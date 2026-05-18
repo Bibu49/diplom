@@ -11,7 +11,7 @@ export default function FileUploader() {
     form.append('file', file)
 
     await axios.post(
-      'http://localhost:8000/api/import/excel',
+      '/api/import/excel',
       form
     )
   }

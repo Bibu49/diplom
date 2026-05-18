@@ -64,19 +64,11 @@ class FormulaEngine:
         return ratio * weight
 
 
-# =====================================================
-# MAIN RATING ENDPOINT
-# =====================================================
-
 @router.get("/rating", response_model=List[RatingResponse])
 async def get_rating(
     period: date = Query(...),
     db: AsyncSession = Depends(get_db)
 ):
-
-    # =====================================================
-    # 1. Проверка существующего рейтинга
-    # =====================================================
 
     stmt = (
         select(Rating)
@@ -108,9 +100,6 @@ async def get_rating(
 
         return response
 
-    # =====================================================
-    # 2. Загружаем KPI
-    # =====================================================
 
     kpis_stmt = select(KPI)
 
@@ -124,10 +113,6 @@ async def get_rating(
             detail="No KPI defined"
         )
 
-    # =====================================================
-    # 3. Загружаем филиалы
-    # =====================================================
-
     filials_stmt = select(Filial)
 
     filials_res = await db.execute(filials_stmt)
@@ -139,10 +124,6 @@ async def get_rating(
             status_code=404,
             detail="No filials"
         )
-
-    # =====================================================
-    # 4. Загружаем KPI факты
-    # =====================================================
 
     facts_stmt = (
         select(KpiFact)
@@ -159,18 +140,12 @@ async def get_rating(
             detail="No KPI facts for selected period"
         )
 
-    # =====================================================
-    # 5. Строим словарь фактов
-    # =====================================================
-
     fact_dict = {}
 
     for f in facts:
         fact_dict[(f.filial_id, f.kpi_id)] = f.value
 
-    # =====================================================
     # 6. Лучшие значения KPI
-    # =====================================================
 
     kpi_best = {}
 
@@ -191,9 +166,7 @@ async def get_rating(
         else:
             kpi_best[kpi.id] = min(values)
 
-    # =====================================================
     # 7. РАСЧЕТ EXCEL KPI SCORE
-    # =====================================================
 
     scores = {}
 
@@ -212,10 +185,6 @@ async def get_rating(
 
             best = kpi_best[kpi.id]
 
-            # =============================================
-            # HIGHER BETTER
-            # =============================================
-
             if kpi.is_higher_better:
 
                 base_score = FormulaEngine.higher_better_score(
@@ -223,10 +192,6 @@ async def get_rating(
                     best=best,
                     weight=kpi.weight
                 )
-
-            # =============================================
-            # LOWER BETTER
-            # =============================================
 
             else:
 
@@ -236,12 +201,7 @@ async def get_rating(
                     weight=kpi.weight
                 )
 
-            # =============================================
             # EXCEL DELTA CALCULATION
-            # =============================================
-
-            # Норматив 95%
-            # Можно хранить в БД позже
 
             norm = 0.95
 
@@ -250,9 +210,7 @@ async def get_rating(
                 norm
             )
 
-            # =============================================
             # EXCEL SCORE FORMULA
-            # =============================================
 
             final_score = FormulaEngine.score(
                 delta_percent=delta,
@@ -263,9 +221,7 @@ async def get_rating(
 
         scores[fil.id] = round(total_score, 2)
 
-    # =====================================================
     # 8. СОРТИРОВКА РЕЙТИНГА
-    # =====================================================
 
     sorted_filials = sorted(
         scores.items(),
@@ -273,9 +229,7 @@ async def get_rating(
         reverse=True
     )
 
-    # =====================================================
     # 9. СОХРАНЕНИЕ В БД
-    # =====================================================
 
     new_ratings = []
 
@@ -296,10 +250,6 @@ async def get_rating(
         new_ratings.append(rating)
 
     await db.commit()
-
-    # =====================================================
-    # 10. RESPONSE
-    # =====================================================
 
     response = []
 

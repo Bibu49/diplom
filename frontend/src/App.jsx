@@ -1,29 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import RatingTable from './components/RatingTable';
 import ChartComponent from './components/ChartComponent';
+import ImportPage from './pages/ImportPage';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import './App.css';
 
-// Конфигурация компании (замените на реальные данные)
 const COMPANY = {
   name: "АО «Татэнергосбыт»",
-  website: "https://tatenergosbyt.ru/",
+  website: "https://tatenergosbyt.ru",
   email: "info@tatenergosbyt.ru",
   phone: "8 (800) 200-25-26",
-  logoUrl: "/logo.jpg"   
+  logoUrl: "/logo.jpg"
 };
 
-function App() {
-  const [period, setPeriod] = useState('2025-01-01');
-  const [ratingData, setRatingData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    fetchRating();
-  }, [period]);
+// Отдельный компонент для главной страницы (рейтинг)
+const HomePage = () => {
+  const [period, setPeriod] = React.useState('2025-01-01');
+  const [ratingData, setRatingData] = React.useState([]);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState('');
 
   const fetchRating = async () => {
     setLoading(true);
@@ -39,11 +37,45 @@ function App() {
     }
   };
 
+  React.useEffect(() => {
+    fetchRating();
+  }, [period]);
+
   const handlePeriodChange = (e) => {
     const newPeriod = e.target.value + '-01';
     setPeriod(newPeriod);
   };
 
+  return (
+    <>
+      <h1>Рейтинг филиалов по KPI</h1>
+      <div className="controls">
+        <label> Период: </label>
+        <input
+          type="month"
+          value={period.slice(0, 7)}
+          onChange={handlePeriodChange}
+        />
+        <button onClick={fetchRating}>Обновить</button>
+      </div>
+      {loading && <div className="loader">Загрузка...</div>}
+      {error && <div className="error">{error}</div>}
+      {!loading && ratingData.length > 0 && (
+        <>
+          <RatingTable data={ratingData} />
+          <ChartComponent data={ratingData} />
+        </>
+      )}
+      {!loading && ratingData.length === 0 && !error && (
+        <p className="no-data">Нет данных для отображения. Добавьте филиалы, KPI и фактические значения.</p>
+      )}
+    </>
+  );
+};
+
+// Главный компонент с роутингом
+function App() {
+  const location = useLocation();
   return (
     <div className="app-wrapper">
       <Header 
@@ -52,27 +84,10 @@ function App() {
         companyName={COMPANY.name}
       />
       <main className="container">
-        <h1>📊 Рейтинг филиалов по KPI</h1>
-        <div className="controls">
-          <label>📅 Период: </label>
-          <input
-            type="month"
-            value={period.slice(0, 7)}
-            onChange={handlePeriodChange}
-          />
-          <button onClick={fetchRating}>Обновить</button>
-        </div>
-        {loading && <div className="loader">Загрузка...</div>}
-        {error && <div className="error">{error}</div>}
-        {!loading && ratingData.length > 0 && (
-          <>
-            <RatingTable data={ratingData} />
-            <ChartComponent data={ratingData} />
-          </>
-        )}
-        {!loading && ratingData.length === 0 && !error && (
-          <p className="no-data">Нет данных для отображения. Добавьте филиалы, KPI и фактические значения.</p>
-        )}
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/import" element={<ImportPage />} />
+        </Routes>
       </main>
       <Footer 
         companyName={COMPANY.name}
@@ -84,4 +99,8 @@ function App() {
   );
 }
 
-export default App;
+export default () => (
+  <Router>
+    <App />
+  </Router>
+);

@@ -57,3 +57,44 @@
     height: 40px;
   }
 }
+/* ... существующие стили ... */
+
+.nav-menu {
+  display: flex;
+  gap: 20px;
+  background-color: #fff3e6;
+  padding: 6px 12px;
+  border-radius: 40px;
+}
+
+.nav-link {
+  text-decoration: none;
+  font-weight: 500;
+  padding: 6px 16px;
+  border-radius: 30px;
+  transition: all 0.2s;
+  color: #4a5568;
+  font-size: 0.95rem;
+}
+
+.nav-link:hover {
+  background-color: #f97316;
+  color: white;
+}
+
+.nav-link.active {
+  background-color: #f97316;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+@media (max-width: 700px) {
+  .nav-menu {
+    gap: 10px;
+    margin: 8px 0;
+  }
+  .nav-link {
+    padding: 4px 12px;
+    font-size: 0.85rem;
+  }
+}

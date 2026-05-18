@@ -22,7 +22,7 @@ const ChartComponent = ({ data }) => {
 
   return (
     <div className="chart-container">
-      <h3>📈 Сравнение баллов филиалов</h3>
+      <h3>Сравнение баллов филиалов</h3>
       <ResponsiveContainer width="100%" height={400}>
         <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" />

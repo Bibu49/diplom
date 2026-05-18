@@ -6,9 +6,9 @@ const RatingTable = ({ data }) => {
       <table className="rating-table">
         <thead>
           <tr>
-            <th>🏆 Место</th>
-            <th>🏢 Филиал</th>
-            <th>⭐ Интегральный балл</th>
+            <th>Место</th>
+            <th>Филиал</th>
+            <th>Интегральный балл</th>
           </tr>
         </thead>
         <tbody>
