@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import rating, filials, kpis, facts, import_excel
+from app.routers import rating, filials, kpis, facts, import_excel, import_kpi_structured
 from contextlib import asynccontextmanager
 from app.database.db import engine, Base
 # позже добавим другие роутеры

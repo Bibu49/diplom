@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, UniqueConstraint, Boolean
 from sqlalchemy.orm import relationship
 from app.database.db import Base
 from app.models.import_session import ImportSession
@@ -20,6 +20,7 @@ class KPI(Base):
     weight = Column(Float, default=1.0)   # вес в интегральном рейтинге
     target = Column(Float)                # плановое значение (может быть общим для всех)
     is_higher_better = Column(Integer, default=1)  # 1 - больше лучше, 0 - меньше лучше
+    category = Column(String(20), nullable=True)
 
     kpi_facts = relationship("KpiFact", back_populates="kpi")
 
