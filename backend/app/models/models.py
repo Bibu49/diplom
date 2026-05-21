@@ -58,3 +58,13 @@ class PrimaryData(Base):
     realization = Column(Float, default=0.0)      # объём реализации
     debt_receivable = Column(Float, default=0.0)  # дебиторская задолженность (Дт)
     overdue_debt = Column(Float, default=0.0)     # просроченная задолженность (ПЗ)
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    is_admin = Column(Boolean, default=False)
+    filial_id = Column(Integer, ForeignKey("filials.id"), nullable=True)
+
+    filial = relationship("Filial")

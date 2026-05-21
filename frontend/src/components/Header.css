@@ -98,3 +98,21 @@
     font-size: 0.85rem;
   }
 }
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff3e6;
+  padding: 6px 16px;
+  border-radius: 40px;
+}
+
+.logout-btn {
+  background: #f97316;
+  border: none;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 30px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}

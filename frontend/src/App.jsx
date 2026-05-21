@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import axios from 'axios';
 import RatingTable from './components/RatingTable';
 import ChartComponent from './components/ChartComponent';
 import ImportPage from './pages/ImportPage';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import './App.css';
+
 
 const COMPANY = {
   name: "АО «Татэнергосбыт»",
@@ -16,7 +20,7 @@ const COMPANY = {
   logoUrl: "/logo.jpg"
 };
 
-// Отдельный компонент для главной страницы (рейтинг)
+
 const HomePage = () => {
   const [periodType, setPeriodType] = useState('year');
   const [selectedMonth, setSelectedMonth] = useState('2025-01-01');
@@ -24,6 +28,8 @@ const HomePage = () => {
   const [ratingData, setRatingData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [sortBy, setSortBy] = useState('');
+  const { user } = useAuth();  
 
   const fetchRating = async () => {
     setLoading(true);
@@ -36,7 +42,12 @@ const HomePage = () => {
         url = `/api/rating/year?year=${selectedYear}`;
       }
       const response = await axios.get(url);
-      setRatingData(response.data);
+      // Если пользователь не админ, фильтруем данные по его филиалу
+      let data = response.data;
+      if (!user?.is_admin && user?.filial_id) {
+        data = data.filter(item => item.filial_id === user.filial_id);
+      }
+      setRatingData(data);
     } catch (err) {
       console.error(err);
       setError('Ошибка загрузки рейтинга');
@@ -45,9 +56,9 @@ const HomePage = () => {
     }
   };
 
-    useEffect(() => {
+  useEffect(() => {
     fetchRating();
-  }, [periodType, selectedMonth, selectedYear]);
+  }, [periodType, selectedMonth, selectedYear, user]);
 
   const handleCalculate = async () => {
     setLoading(true);
@@ -57,12 +68,9 @@ const HomePage = () => {
       if (periodType === 'month') {
         periodToSend = selectedMonth;
       } else {
-        // Для года: ваш API ожидает период в формате ГГГГ-ММ-ДД. 
-        // Будем пересчитывать рейтинг за первый месяц этого года.
         periodToSend = `${selectedYear}-01-01`;
       }
       await axios.post(`/api/calculate-from-primary?period=${periodToSend}`);
-      // После успешного пересчёта обновляем таблицу
       await fetchRating();
     } catch (err) {
       console.error(err);
@@ -71,8 +79,6 @@ const HomePage = () => {
       setLoading(false);
     }
   };
-
-
 
   return (
     <>
@@ -133,9 +139,22 @@ const HomePage = () => {
   );
 };
 
-// Главный компонент с роутингом
-function App() {
+const PrivateRoute = ({ children }) => {
+  const { user } = useAuth();
   const location = useLocation();
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} />;
+  }
+  return children;
+};
+
+function AppContent() {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) return <div className="loader">Загрузка...</div>;
+  console.log(location.pathname);
+
   return (
     <div className="app-wrapper">
       <Header 
@@ -145,8 +164,18 @@ function App() {
       />
       <main className="container">
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/import" element={<ImportPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/" element={
+            <PrivateRoute>
+              <HomePage />
+            </PrivateRoute>
+          } />
+          <Route path="/import" element={
+            <PrivateRoute>
+              <ImportPage />
+            </PrivateRoute>
+          } />
         </Routes>
       </main>
       <Footer 
@@ -161,6 +190,8 @@ function App() {
 
 export default () => (
   <Router>
-    <App />
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   </Router>
 );
