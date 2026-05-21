@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import rating, filials, kpis, facts, import_excel, import_kpi_structured
+from app.routers import rating, filials, kpis, facts, import_rating, primary_import
 from contextlib import asynccontextmanager
 from app.database.db import engine, Base
 # позже добавим другие роутеры
@@ -16,7 +16,8 @@ app.include_router(rating.router)
 app.include_router(filials.router)
 app.include_router(kpis.router)
 app.include_router(facts.router)
-app.include_router(import_excel.router)
+app.include_router(import_rating.router)
+app.include_router(primary_import.router)
 
 @app.get("/")
 def root():

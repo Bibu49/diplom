@@ -141,3 +141,38 @@ h1 {
     font-size: 14px;
   }
 }
+.period-toggle {
+    display: flex;
+    gap: 10px;
+    margin-right: 20px;
+}
+.period-toggle button {
+    background-color: #f0f0f0;
+    color: #333;
+    border: 1px solid #ccc;
+    padding: 6px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.period-toggle button.active {
+    background-color: #f97316;
+    color: white;
+    border-color: #f97316;
+}
+/* Поле ввода года */
+.year-input {
+  width: 90px;
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 16px;
+  background-color: white;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.year-input:focus {
+  outline: none;
+  border-color: #f97316;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
+}

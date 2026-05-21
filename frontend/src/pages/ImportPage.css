@@ -113,3 +113,59 @@
   border-radius: 6px;
   font-size: 0.9rem;
 }
+/* Стили для обёртки поля выбора файла */
+.file-input-wrapper {
+  margin: 15px 0;
+}
+
+/* Стилизованная кнопка-метка для выбора файла */
+.file-label {
+  display: inline-block;
+  background-color: #f1f5f9;
+  padding: 10px 20px;
+  border-radius: 30px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #2c3e50;
+  transition: background 0.2s;
+  border: 1px solid #cbd5e1;
+}
+
+.file-label:hover {
+  background-color: #e2e8f0;
+}
+
+/* Скрываем оригинальный input[type=file] */
+.file-input-hidden {
+  display: none;
+}
+
+/* Стиль для кнопки загрузки */
+.upload-button {
+  background-color: #f97316;
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  font-size: 1rem;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.upload-button:hover {
+  background-color: #ea580c;
+  transform: translateY(-1px);
+}
+
+.upload-button:active {
+  transform: translateY(0);
+}
+
+/* Если кнопка недоступна (disabled) */
+.upload-button:disabled {
+  background-color: #cbd5e0;
+  cursor: not-allowed;
+  transform: none;
+}

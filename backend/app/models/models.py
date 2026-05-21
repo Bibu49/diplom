@@ -46,3 +46,15 @@ class Rating(Base):
     rank = Column(Integer)     # место в рейтинге
 
     filial = relationship("Filial", back_populates="ratings")
+
+class PrimaryData(Base):
+    __tablename__ = "primary_data"
+    id = Column(Integer, primary_key=True)
+    filial_id = Column(Integer, ForeignKey("filials.id"), nullable=False)
+    period = Column(Date, nullable=False)
+    category = Column(String(10), nullable=False)  # 'ЮЛ', 'ФЛ', 'ИКУ'
+    accrued = Column(Float, default=0.0)          # начислено
+    advances = Column(Float, default=0.0)         # авансы
+    realization = Column(Float, default=0.0)      # объём реализации
+    debt_receivable = Column(Float, default=0.0)  # дебиторская задолженность (Дт)
+    overdue_debt = Column(Float, default=0.0)     # просроченная задолженность (ПЗ)
