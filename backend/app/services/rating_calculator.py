@@ -1,166 +1,143 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from app.models.models import PrimaryData, Filial, Rating
 from datetime import date, timedelta
-import math
+from collections import defaultdict
+
+# Максимальные баллы по показателям и категориям (из Excel)
+MAX_SCORES = {
+    "ЮЛ": {"p1": 45, "p2": 35, "p3": 20},
+    "ФЛ": {"p1": 10, "p2": 35, "p3": 5},
+    "ИКУ": {"p1": 10, "p2": 35, "p3": 5},
+}
+
+# Плановые значения реализации (норматив) – временно, пока нет таблицы
+# В реальности нужно брать из БД или настроек
+TARGET_REALIZATION = {
+    "ЮЛ": 1_000_000,   # план для ЮЛ в месяц
+    "ФЛ": 500_000,
+    "ИКУ": 300_000,
+}
+
+def calculate_p1(realization, category):
+    """НУР – процент выполнения плана, умноженный на max_балл (не более max)."""
+    target = TARGET_REALIZATION.get(category, 1)
+    if target <= 0:
+        return 0
+    percent = min(realization / target, 2.0)  # ограничим 200% (можно и 100%)
+    max_score = MAX_SCORES[category]["p1"]
+    return round(percent * max_score, 2)
+
+def calculate_p2(realization, overdue_debt, old_overdue_debt, old_realization, category):
+    """
+    Оценка доли ПЗ и снижение ПЗ.
+    Упрощённо: чем меньше доля ПЗ, тем лучше; плюс бонус за снижение.
+    Максимум = max_score.
+    """
+    max_score = MAX_SCORES[category]["p2"]
+    if realization <= 0:
+        return 0
+    # Доля ПЗ в текущем месяце
+    current_ratio = overdue_debt / realization
+    # Доля ПЗ в прошлом году (если данные есть)
+    if old_realization and old_realization > 0:
+        old_ratio = old_overdue_debt / old_realization
+        reduction = max(0, old_ratio - current_ratio)  # снижение доли
+    else:
+        reduction = 0
+    # Формула: базовые баллы за низкую долю + бонус за снижение
+    # За долю 0% – 70% от max, за долю 10% – 0%. Простая линейная.
+    base_score = max_score * 0.7 * (1 - min(current_ratio / 0.10, 1.0))
+    bonus = max_score * 0.3 * min(reduction / 0.05, 1.0)  # если снизили на 5% – полный бонус
+    return round(min(base_score + bonus, max_score), 2)
+
+def calculate_p3(realization, debt_receivable, category):
+    """Доля задолженности в объёме продаж. Чем ниже долг, тем выше балл."""
+    max_score = MAX_SCORES[category]["p3"]
+    if realization <= 0:
+        return 0
+    ratio = debt_receivable / realization
+    # Линейно: при доле 0% – max баллов, при доле 30% – 0 баллов
+    score = max_score * (1 - min(ratio / 0.3, 1.0))
+    return round(score, 2)
 
 async def calculate_rating_by_primary(period: date, db: AsyncSession):
-    """
-    period: дата отчётного месяца (например, 2025-01-01)
-    """
-    # Получаем все первичные данные за указанный период
+    # Данные за текущий месяц
     stmt = select(PrimaryData).where(PrimaryData.period == period)
-    rows = await db.execute(stmt)
-    rows = rows.scalars().all()
-    if not rows:
-        return {"error": "Нет первичных данных за указанный период"}
+    result = await db.execute(stmt)
+    records = result.scalars().all()
+    if not records:
+        return {"error": f"Нет первичных данных за период {period}"}
 
-    # Группируем по филиалам и категориям (в каждой категории свои баллы, но в итоговый рейтинг суммируем баллы по всем категориям для филиала)
-    # Для простоты будем считать, что каждый филиал имеет данные по трём категориям (ЮЛ, ФЛ, ИКУ). Если каких-то нет, пропускаем.
-    filial_scores = {}  # {filial_id: total_score}
+    # Данные за тот же месяц прошлого года
+    last_year_period = period.replace(year=period.year - 1)
+    stmt_old = select(PrimaryData).where(PrimaryData.period == last_year_period)
+    result_old = await db.execute(stmt_old)
+    old_records = result_old.scalars().all()
+    old_data = {(r.filial_id, r.category): r for r in old_records}
 
-    # Для каждой записи (филиал, категория, период) рассчитываем баллы по трём показателям
-    for rec in rows:
-        filial_id = rec.filial_id
-        category = rec.category
-        accrued = rec.accrued
-        advances = rec.advances
-        realization = rec.realization
-        debt_receivable = rec.debt_receivable
-        overdue_debt = rec.overdue_debt
+    # Группируем текущие записи по филиалу и категории
+    filial_cat_data = defaultdict(lambda: {})
+    for rec in records:
+        filial_cat_data[rec.filial_id][rec.category] = rec
 
-        # --- 1. Расчёт НУР, ФУР, отклонения и баллов ---
-        # НУР = (авансы + дебиторка) / начислено
-        if accrued == 0:
-            nur = 0
-        else:
-            nur = (advances + debt_receivable) / accrued
-        # ФУР = реализация / начислено
-        fur = realization / accrued if accrued != 0 else 0
-        delta = fur - nur   # отклонение (может быть отрицательным)
+    ratings_to_save = []
+    for filial_id, cats in filial_cat_data.items():
+        filial = await db.get(Filial, filial_id)
+        if not filial:
+            continue
 
-        # Баллы за НУР (по аналогии с Excel, но упрощённо)
-        # За основу берём максимальный балл для данной категории (из файлов: ЮЛ – 30, ФЛ – 5, ИКУ – 5)
-        if category == 'ЮЛ':
-            max_score_nur = 30
-            max_bonus_nur = 15
-            coeff = 0.3
-        else:  # ФЛ или ИКУ
-            max_score_nur = 5
-            max_bonus_nur = 5
-            coeff = 0.2
+        total_score = 0.0
+        kpi_scores = {"ЮЛ": 0.0, "ФЛ": 0.0, "ИКУ": 0.0}
 
-        if delta > 0:
-            score_nur = max_score_nur
-            bonus_nur = max_bonus_nur
-        else:
-            raw_score = (1 + coeff * (delta / 0.01)) * max_score_nur
-            score_nur = max(0.0, raw_score)
-            raw_bonus = (1 + 0.1 * (delta / 0.01)) * max_bonus_nur - max_bonus_nur
-            bonus_nur = max(0.0, raw_bonus)
-            if bonus_nur > max_bonus_nur:
-                bonus_nur = max_bonus_nur
+        for category, data in cats.items():
+            # Показатель 1: НУР
+            p1 = calculate_p1(data.realization, category)
+            # Показатель 2: ПЗ (нужны данные за прошлый год)
+            old = old_data.get((filial_id, category))
+            old_overdue = old.overdue_debt if old else 0
+            old_realization = old.realization if old else 0
+            p2 = calculate_p2(data.realization, data.overdue_debt, old_overdue, old_realization, category)
+            # Показатель 3: Доля долга
+            p3 = calculate_p3(data.realization, data.debt_receivable, category)
 
-        # --- 2. Доля задолженности в объёме продаж (ДЗ) ---
-        if realization == 0:
-            debt_share = 0
-        else:
-            debt_share = debt_receivable / realization   # доля ДЗ
+            cat_total = p1 + p2 + p3
+            kpi_scores[category] = cat_total
+            total_score += cat_total
 
-        # Целевое значение (норматив) зависит от категории: для ЮЛ – 0.3 (30%), для ФЛ и ИКУ – тоже 0.3 (можно уточнить)
-        target_debt_share = 0.3
-        max_score_debt = 15 if category == 'ЮЛ' else 5   # из Excel: ЮЛ – 15, ФЛ/ИКУ – 5
-        if debt_share <= target_debt_share:
-            score_debt = max_score_debt
-        else:
-            # Штраф: чем выше доля, тем меньше баллов
-            score_debt = max(0, max_score_debt * (1 - (debt_share - target_debt_share) / target_debt_share))
+        # Сохраняем
+        ratings_to_save.append({
+            "filial_id": filial_id,
+            "period": period,
+            "score": total_score,
+            "kpi1": kpi_scores["ЮЛ"],
+            "kpi2": kpi_scores["ФЛ"],
+            "kpi3": kpi_scores["ИКУ"],
+        })
 
-        # --- 3. Доля просроченной задолженности (ПЗ) и её снижение ---
-        if realization == 0:
-            overdue_share = 0
-        else:
-            overdue_share = overdue_debt / realization
-
-        # Норматив ПЗ: для ЮЛ – 0.015, для ФЛ – 0.08, для ИКУ – 0.02
-        if category == 'ЮЛ':
-            target_overdue_share = 0.015
-            max_score_overdue = 20
-            max_bonus_overdue = 15
-        elif category == 'ФЛ':
-            target_overdue_share = 0.08
-            max_score_overdue = 20
-            max_bonus_overdue = 15
-        else:  # ИКУ
-            target_overdue_share = 0.02
-            max_score_overdue = 20
-            max_bonus_overdue = 15
-
-        # Балл за долю ПЗ
-        if overdue_share < target_overdue_share:
-            score_overdue = max_score_overdue
-        elif overdue_share > target_overdue_share:
-            score_overdue = target_overdue_share / overdue_share * max_score_overdue
-        else:
-            score_overdue = max_score_overdue
-
-        # Снижение ПЗ: требуется значение за прошлый год
-        prev_period = period.replace(year=period.year - 1)
-        prev_stmt = select(PrimaryData).where(
-            PrimaryData.filial_id == filial_id,
-            PrimaryData.category == category,
-            PrimaryData.period == prev_period
-        )
-        prev_rec = (await db.execute(prev_stmt)).scalar_one_or_none()
-        if prev_rec and prev_rec.realization != 0:
-            prev_overdue_share = prev_rec.overdue_debt / prev_rec.realization
-            if prev_overdue_share > 0:
-                improvement = max(0, (prev_overdue_share - overdue_share) / prev_overdue_share)
-            else:
-                improvement = 1 if overdue_share == 0 else 0
-        else:
-            improvement = 0
-
-        # Бонус за снижение
-        bonus_overdue = max_bonus_overdue * min(improvement, 1.0)
-
-        # --- Итоговый балл для данной категории филиала (сумма трёх показателей, бонусы не входят в рейтинг, но можно добавить) ---
-        category_score = score_nur + score_debt + score_overdue   # бонусы не включаем, как в Excel (они отдельно)
-
-        # Суммируем по филиалу (складываем баллы по категориям)
-        if filial_id not in filial_scores:
-            filial_scores[filial_id] = 0
-        filial_scores[filial_id] += category_score
-
-    if not filial_scores:
-        return {"error": "Не удалось рассчитать баллы ни для одного филиала"}
-
-    # Сортируем филиалы по сумме баллов (убывание)
-    sorted_filials = sorted(filial_scores.items(), key=lambda x: x[1], reverse=True)
-
-    # Сохраняем рейтинг в таблицу Rating
-    await db.execute(Rating.__table__.delete().where(Rating.period == period))
-    for rank, (filial_id, total_score) in enumerate(sorted_filials, start=1):
+    # Удаляем старые рейтинги и вставляем новые
+    from sqlalchemy import delete
+    await db.execute(delete(Rating).where(Rating.period == period))
+    for r in ratings_to_save:
         rating = Rating(
-            filial_id=filial_id,
-            period=period,
-            score=total_score,
-            rank=rank
+            filial_id=r["filial_id"],
+            period=r["period"],
+            score=r["score"],
+            rank=0,
+            kpi1=r["kpi1"],
+            kpi2=r["kpi2"],
+            kpi3=r["kpi3"],
         )
         db.add(rating)
     await db.commit()
 
-    # Возвращаем результат
-    result = []
-    for filial_id, score in sorted_filials:
-        filial = await db.get(Filial, filial_id)
-        result.append({
-            "filial_id": filial_id,
-            "filial_name": filial.name if filial else "Неизвестно",
-            "score": score,
-            "rank": result[-1]["rank"] + 1 if result else 1  # корректно проставить rank
-        })
-    # Пересчитаем rank по порядку
-    for i, item in enumerate(result, 1):
-        item["rank"] = i
-    return result
+    # Пересчёт рангов
+    all_ratings = (await db.execute(select(Rating).where(Rating.period == period).order_by(Rating.score.desc()))).scalars().all()
+    for idx, rt in enumerate(all_ratings, start=1):
+        rt.rank = idx
+    await db.commit()
+
+    return [
+        {"filial_id": r.filial_id, "score": r.score, "kpi1": r.kpi1, "kpi2": r.kpi2, "kpi3": r.kpi3, "rank": r.rank}
+        for r in all_ratings
+    ]

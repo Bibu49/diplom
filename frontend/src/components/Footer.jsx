@@ -10,7 +10,7 @@ const Footer = ({ companyName, year, contactEmail, companyPhone }) => {
           <p><a href={`mailto:${contactEmail}`}>{contactEmail}</a> |  {companyPhone}</p>
         </div>
         <div className="footer-credits">
-          Разработано в рамках дипломного проекта «Информационный сервис для расчёта и визуализации KPI филиалов»
+          Разработано в рамках выпускной квалификационной работы: «Разработка информационного сервиса для расчёта и составления рейтингов компании АО«Татэнергосбыт»
         </div>
       </div>
     </footer>

@@ -29,6 +29,7 @@ const HomePage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [sortBy, setSortBy] = useState('');
+  const [viewMode, setViewMode] = useState('total');
   const { user } = useAuth();  
 
   const fetchRating = async () => {
@@ -94,6 +95,20 @@ const HomePage = () => {
             onClick={() => setPeriodType('year')}
           >По годам</button>
           <button onClick={handleCalculate} style={{marginLeft: '10px'}}>Пересчитать рейтинг</button>
+          <div className="view-mode-filter" style={{ marginLeft: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <label htmlFor="viewModeSelect" style={{ fontWeight: 'bold' }}>Отображать:</label>
+            <select
+              id="viewModeSelect"
+              value={viewMode}
+              onChange={(e) => setViewMode(e.target.value)}
+              style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #ccc', backgroundColor: '#fff' }}
+            >
+              <option value="total">Интегральный балл</option>
+              <option value="kpi1">Юридические лица (ЮЛ)</option>
+              <option value="kpi2">Физические лица (ФЛ)</option>
+              <option value="kpi3">Исполнитель коммунальных услуг (ИКУ)</option>
+            </select>
+          </div>
         </div>
 
         {periodType === 'month' && (
@@ -128,8 +143,8 @@ const HomePage = () => {
       {error && <div className="error">{error}</div>}
       {!loading && ratingData.length > 0 && (
         <>
-          <RatingTable data={ratingData} />
-          <ChartComponent data={ratingData} />
+          <RatingTable data={ratingData} viewMode={viewMode} />
+          <ChartComponent data={ratingData} viewMode={viewMode} />
         </>
       )}
       {!loading && ratingData.length === 0 && !error && (

@@ -1,4 +1,4 @@
-/* Сброс отступов у body и html */
+
 * {
   margin: 0;
   padding: 0;
@@ -175,4 +175,63 @@ h1 {
   outline: none;
   border-color: #f97316;
   box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
+}
+/* Тултип для таблицы */
+.table-tooltip {
+  position: absolute;
+  background-color: #2d3748;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  z-index: 100;
+  top: -30px;
+  right: 10px;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  font-weight: normal;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+/* Тултип для графика (recharts) */
+.chart-tooltip {
+  background-color: #1e293b;
+  color: #f1f5f9;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  border-left: 4px solid #f97316;
+  line-height: 1.5;
+}
+
+.chart-tooltip p {
+  margin: 4px 0;
+}
+
+.chart-tooltip strong {
+  color: #f97316;
+}
+
+/* Стили для фильтра (кнопки) */
+.view-mode-filter button {
+  background-color: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  padding: 6px 14px;
+  border-radius: 30px;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.view-mode-filter button.active {
+  background-color: #f97316;
+  color: white;
+  border-color: #f97316;
+}
+
+.view-mode-filter button:hover:not(.active) {
+  background-color: #e2e8f0;
+  transform: translateY(-1px);
 }

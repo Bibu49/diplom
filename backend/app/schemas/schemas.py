@@ -38,3 +38,6 @@ class RatingResponse(BaseModel):
     period: date
     score: float
     rank: int
+    kpi1: Optional[float] = None
+    kpi2: Optional[float] = None
+    kpi3: Optional[float] = None

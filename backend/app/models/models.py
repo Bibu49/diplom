@@ -44,6 +44,9 @@ class Rating(Base):
     period = Column(Date, nullable=False)
     score = Column(Float)      # интегральный балл
     rank = Column(Integer)     # место в рейтинге
+    kpi1 = Column(Float, default=0.0)  # ЮЛ
+    kpi2 = Column(Float, default=0.0)  # ФЛ
+    kpi3 = Column(Float, default=0.0)  # ИКУ
 
     filial = relationship("Filial", back_populates="ratings")
 

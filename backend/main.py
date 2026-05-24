@@ -2,7 +2,6 @@ from fastapi import FastAPI
 from app.routers import rating, filials, kpis, facts, import_rating, primary_import, auth
 from contextlib import asynccontextmanager
 from app.database.db import engine, Base
-# позже добавим другие роутеры
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
